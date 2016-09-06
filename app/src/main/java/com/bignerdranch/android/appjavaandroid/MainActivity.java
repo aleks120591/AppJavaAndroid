@@ -3,14 +3,13 @@ package com.bignerdranch.android.appjavaandroid;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.support.v7.widget.Toolbar.OnMenuItemClickListener;
 import android.view.MenuItem;
-import android.widget.TableLayout;
 
 import com.bignerdranch.android.appjavaandroid.adapter.TabsFragmentAdapter;
 import com.bignerdranch.android.appjavaandroid.dto.DTO;
@@ -25,10 +24,9 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int LAYOUT = R.layout.activity_main;
 
-    private Toolbar mToolbar;
-    private NavigationView mNavigationView;
-    private DrawerLayout mDrawerLayout;
-    private ViewPager mViewPager;
+    private Toolbar toolbar;
+    private DrawerLayout drawerLayout;
+    private ViewPager viewPager;
 
     private TabsFragmentAdapter adapter;
 
@@ -44,35 +42,44 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initToolbar() {
-        mToolbar = (Toolbar) findViewById(R.id.toolbar);
-        mToolbar.setTitle(R.string.app_name);
-        mToolbar.setOnMenuItemClickListener(new OnMenuItemClickListener() {
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.setTitle(R.string.app_name);
+        toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
             @Override
-            public boolean onMenuItemClick(MenuItem item) {
+            public boolean onMenuItemClick(MenuItem menuItem) {
                 return false;
             }
         });
-        mToolbar.inflateMenu(R.menu.menu);
+
+        toolbar.inflateMenu(R.menu.menu);
+    }
+
+    private void initTabs() {
+        viewPager = (ViewPager) findViewById(R.id.viewPager);
+        adapter = new TabsFragmentAdapter(getApplicationContext(), getSupportFragmentManager(), new ArrayList<DTO>());
+        viewPager.setAdapter(adapter);
+
+        new RemindMeTask().execute();
+
+        TabLayout tabLayout = (TabLayout) findViewById(R.id.tabLayout);
+        tabLayout.setupWithViewPager(viewPager);
+
+
     }
 
     private void initNavigationView() {
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
 
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this,
-                                                                    mDrawerLayout,
-                                                                    mToolbar,
-                                                                    R.string.view_navigation_open,
-                                                                    R.string.view_navigation_close
-                                                            );
-        mDrawerLayout.setDrawerListener(toggle);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.view_navigation_open, R.string.view_navigation_close);
+        drawerLayout.setDrawerListener(toggle);
         toggle.syncState();
 
-        mNavigationView = (NavigationView) findViewById(R.id.navigation);
-        mNavigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
+        NavigationView navigationView = (NavigationView) findViewById(R.id.navigation);
+        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
-            public boolean onNavigationItemSelected(MenuItem item) {
-                mDrawerLayout.closeDrawers();
-                switch (item.getItemId()){
+            public boolean onNavigationItemSelected(MenuItem menuItem) {
+                drawerLayout.closeDrawers();
+                switch (menuItem.getItemId()) {
                     case R.id.actionNotificationItem:
                         showNotificationTab();
                 }
@@ -81,24 +88,14 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void initTabs() {
-        mViewPager=(ViewPager)findViewById(R.id.viewPager);
-        adapter =new TabsFragmentAdapter(getApplicationContext(),getSupportFragmentManager(),new ArrayList<DTO>());
-
-        new MeTask().execute();
-
-        TableLayout mTableLayout=(TableLayout)findViewById(R.id.tabLayout);
-        mTableLayout.setupWithPager(mViewPager);
-    }
-
     private void showNotificationTab() {
-        mViewPager.setCurrentItem(Constants.TAB_TWO);
+        viewPager.setCurrentItem(Constants.TAB_TWO);
     }
 
-    private class MeTask extends AsyncTask<Void,Void,DTO>{
+    private class RemindMeTask extends AsyncTask<Void, Void, DTO> {
 
         @Override
-        protected DTO doInBackground(Void... params){
+        protected DTO doInBackground(Void... params) {
             RestTemplate template = new RestTemplate();
             template.getMessageConverters().add(new MappingJackson2HttpMessageConverter());
 
@@ -106,9 +103,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected void onPostExecute(DTO dto) {
+        protected void onPostExecute(DTO remindDTO) {
             List<DTO> data = new ArrayList<>();
-            data.add(dto);
+            data.add(remindDTO);
 
             adapter.setData(data);
         }
